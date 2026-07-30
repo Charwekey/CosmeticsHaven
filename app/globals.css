@@ -1,26 +1,112 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --background: #FDFBF7;
+  --foreground: #2A1F1D;
+  --gold-primary: #C59B27;
+  --gold-accent: #E5C365;
+  --gold-dark: #8C6A12;
+  --nude-bg: #F4EBE2;
+  --nude-card: rgba(255, 255, 255, 0.55);
+  --glass-border: rgba(255, 255, 255, 0.7);
+  --glass-shadow: 0 20px 40px -15px rgba(60, 40, 30, 0.08), 0 0 20px rgba(255, 255, 255, 0.8) inset;
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  overflow-x: hidden;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(244, 235, 226, 0.7) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(229, 195, 101, 0.15) 0px, transparent 50%),
+    radial-gradient(at 50% 100%, rgba(253, 251, 247, 0.9) 0px, transparent 50%);
+  background-attachment: fixed;
+}
+
+h1, h2, h3, .font-serif-luxury {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+}
+
+/* Glassmorphism Luxury Utilities */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 15px 35px -10px rgba(70, 50, 40, 0.07), 0 1px 0 rgba(255, 255, 255, 0.9) inset;
+}
+
+.glass-card-dark {
+  background: rgba(44, 30, 26, 0.85);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(229, 195, 101, 0.3);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+  color: #FDFBF7;
+}
+
+.glass-pill {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 8px 20px rgba(70, 50, 40, 0.05);
+}
+
+.glass-floating-3d {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.75), rgba(244, 235, 226, 0.45));
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 
+    0 30px 60px -15px rgba(60, 40, 30, 0.12),
+    0 10px 20px -5px rgba(197, 155, 39, 0.1),
+    0 0 25px rgba(255, 255, 255, 0.8) inset;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-floating-3d:hover {
+  transform: translateY(-6px) scale(1.01);
+  box-shadow: 
+    0 40px 80px -20px rgba(60, 40, 30, 0.18),
+    0 15px 30px -5px rgba(197, 155, 39, 0.2),
+    0 0 35px rgba(255, 255, 255, 0.95) inset;
+}
+
+.gold-gradient-btn {
+  background: linear-gradient(135deg, #D4AF37 0%, #E5C365 50%, #C59B27 100%);
+  color: #2A1F1D;
+  font-weight: 600;
+  box-shadow: 0 10px 25px -5px rgba(197, 155, 39, 0.4);
+  transition: all 0.3s ease;
+}
+
+.gold-gradient-btn:hover {
+  background: linear-gradient(135deg, #E5C365 0%, #F3E5AB 50%, #D4AF37 100%);
+  box-shadow: 0 15px 30px -5px rgba(197, 155, 39, 0.6);
+  transform: translateY(-2px);
+}
+
+.gold-text-gradient {
+  background: linear-gradient(135deg, #8C6A12 0%, #C59B27 50%, #8C6A12 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Custom Luxury Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #FDFBF7;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(197, 155, 39, 0.4);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(197, 155, 39, 0.7);
 }
