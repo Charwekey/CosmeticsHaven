@@ -1,5 +1,39 @@
 export type Role = 'CUSTOMER' | 'ADMIN';
 
+export type StaffRole = 'SUPER_ADMIN' | 'MANAGER' | 'SALES' | 'CONTENT';
+
+export interface StaffPrivileges {
+  products:   boolean;
+  categories: boolean;
+  orders:     boolean;
+  customers:  boolean;
+  reviews:    boolean;
+  coupons:    boolean;
+  reports:    boolean;
+  cms:        boolean;
+  staff:      boolean; // only SUPER_ADMIN can manage staff
+}
+
+export const DEFAULT_PRIVILEGES: Record<StaffRole, StaffPrivileges> = {
+  SUPER_ADMIN: { products: true,  categories: true,  orders: true,  customers: true,  reviews: true,  coupons: true,  reports: true,  cms: true,  staff: true  },
+  MANAGER:     { products: true,  categories: true,  orders: true,  customers: true,  reviews: true,  coupons: true,  reports: true,  cms: false, staff: false },
+  SALES:       { products: false, categories: false, orders: true,  customers: true,  reviews: false, coupons: false, reports: true,  cms: false, staff: false },
+  CONTENT:     { products: true,  categories: true,  orders: false, customers: false, reviews: true,  coupons: false, reports: false, cms: true,  staff: false },
+};
+
+export interface StaffMember {
+  id:          string;
+  name:        string;
+  email:       string;
+  phone?:      string;
+  staffRole:   StaffRole;
+  privileges:  StaffPrivileges;
+  active:      boolean;
+  password:    string;
+  createdAt:   string;
+  createdBy:   string; // admin id who created this staff
+}
+
 export type OrderStatus =
   | 'PENDING'
   | 'CONFIRMED'

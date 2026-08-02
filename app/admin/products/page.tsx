@@ -5,7 +5,7 @@ import { useShop } from '@/context/ShopContext';
 import { mockDb } from '@/lib/db/mock-db';
 import { Product } from '@/lib/types';
 import { formatCurrency } from '@/lib/utils';
-import { Plus, Edit, Trash2, Search, X, Check } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, X, Check, Upload, Image as ImageIcon, Link as LinkIcon, Sparkles } from 'lucide-react';
 
 export default function AdminProductsPage() {
   const { showToast } = useShop();
@@ -27,6 +27,29 @@ export default function AdminProductsPage() {
   const [imageUrl, setImageUrl] = useState('');
   const [ingredients, setIngredients] = useState('');
   const [usage, setUsage] = useState('');
+  const [featured, setFeatured] = useState<boolean>(true);
+  const [isBestSeller, setIsBestSeller] = useState<boolean>(true);
+  const [imageMode, setImageMode] = useState<'upload' | 'url'>('upload');
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleFileUpload = (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      showToast('Please select a valid image file (PNG, JPG, WEBP, etc.)', 'error');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('Image file size must be less than 5MB', 'error');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      if (e.target?.result) {
+        setImageUrl(e.target.result as string);
+        showToast('Image file uploaded successfully!', 'success');
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   const openCreateModal = () => {
     setEditingId(null);
@@ -41,6 +64,8 @@ export default function AdminProductsPage() {
     setImageUrl('https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=800&q=80');
     setIngredients('');
     setUsage('');
+    setFeatured(true);
+    setIsBestSeller(true);
     setModalOpen(true);
   };
 
@@ -57,6 +82,8 @@ export default function AdminProductsPage() {
     setImageUrl(p.images[0] || '');
     setIngredients(p.ingredients || '');
     setUsage(p.usage || '');
+    setFeatured(p.featured ?? true);
+    setIsBestSeller(p.isBestSeller ?? true);
     setModalOpen(true);
   };
 
@@ -75,6 +102,8 @@ export default function AdminProductsPage() {
         stock,
         sku,
         description,
+        featured,
+        isBestSeller,
         images: [imageUrl],
         ingredients,
         usage,
@@ -90,7 +119,8 @@ export default function AdminProductsPage() {
         discountPrice: discountPrice ? Number(discountPrice) : undefined,
         stock,
         sku,
-        featured: true,
+        featured,
+        isBestSeller,
         images: [imageUrl],
         description,
         ingredients,
@@ -289,15 +319,125 @@ export default function AdminProductsPage() {
                 </div>
               </div>
 
-              <div>
-                <label className="font-bold text-stone-700 block mb-1">Image URL *</label>
-                <input
-                  type="text"
-                  required
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2"
-                />
+              {/* ── Image Selector: Dual Mode (Upload File OR Web URL) ── */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="font-bold text-stone-700 block">Product Image *</label>
+                  <div className="flex bg-stone-100 p-1 rounded-xl gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setImageMode('upload')}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                        imageMode === 'upload'
+                          ? 'bg-white text-stone-900 shadow-sm'
+                          : 'text-stone-500 hover:text-stone-800'
+                      }`}
+                    >
+                      <Upload className="w-3.5 h-3.5" /> Upload File
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setImageMode('url')}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                        imageMode === 'url'
+                          ? 'bg-white text-stone-900 shadow-sm'
+                          : 'text-stone-500 hover:text-stone-800'
+                      }`}
+                    >
+                      <LinkIcon className="w-3.5 h-3.5" /> Web Image URL
+                    </button>
+                  </div>
+                </div>
+
+                {imageMode === 'upload' ? (
+                  <div
+                    onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                    onDragLeave={() => setIsDragging(false)}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      setIsDragging(false);
+                      if (e.dataTransfer.files?.[0]) handleFileUpload(e.dataTransfer.files[0]);
+                    }}
+                    className={`border-2 border-dashed rounded-2xl p-6 text-center transition-all cursor-pointer ${
+                      isDragging
+                        ? 'border-amber-500 bg-amber-50/50'
+                        : 'border-stone-200 hover:border-amber-400 bg-stone-50/50'
+                    }`}
+                    onClick={() => {
+                      const input = document.createElement('input');
+                      input.type = 'file';
+                      input.accept = 'image/*';
+                      input.onchange = (e: any) => {
+                        if (e.target.files?.[0]) handleFileUpload(e.target.files[0]);
+                      };
+                      input.click();
+                    }}
+                  >
+                    <Upload className="w-8 h-8 mx-auto text-amber-700 mb-2 opacity-80" />
+                    <p className="font-bold text-stone-800 text-xs">
+                      Click to choose an image or drag &amp; drop here
+                    </p>
+                    <p className="text-[10px] text-stone-400 mt-0.5">
+                      Supports PNG, JPG, WEBP, GIF up to 5MB
+                    </p>
+                  </div>
+                ) : (
+                  <input
+                    type="text"
+                    required={!imageUrl}
+                    value={imageUrl}
+                    onChange={(e) => setImageUrl(e.target.value)}
+                    placeholder="https://images.unsplash.com/..."
+                    className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2 text-xs"
+                  />
+                )}
+
+                {/* Live Image Preview */}
+                {imageUrl && (
+                  <div className="flex items-center gap-3 p-3 rounded-2xl bg-stone-100 border border-stone-200/80 mt-2">
+                    <img
+                      src={imageUrl}
+                      alt="Preview"
+                      className="w-14 h-14 object-cover rounded-xl border border-stone-200 shrink-0 bg-white"
+                      onError={() => showToast('Could not load image preview. Please check URL/file.', 'error')}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-stone-900 text-xs truncate">Image Loaded</p>
+                      <p className="text-[10px] text-stone-500 truncate max-w-full font-mono mt-0.5">
+                        {imageUrl.startsWith('data:') ? 'Local file uploaded (Base64)' : imageUrl}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setImageUrl('')}
+                      className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-100 transition text-xs font-bold"
+                      title="Remove image"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center gap-6 py-1">
+                <label className="flex items-center gap-2 cursor-pointer font-bold text-stone-700">
+                  <input
+                    type="checkbox"
+                    checked={featured}
+                    onChange={(e) => setFeatured(e.target.checked)}
+                    className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500"
+                  />
+                  <span>Show on Home (Featured)</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer font-bold text-stone-700">
+                  <input
+                    type="checkbox"
+                    checked={isBestSeller}
+                    onChange={(e) => setIsBestSeller(e.target.checked)}
+                    className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500"
+                  />
+                  <span>Show on Home (Best Seller)</span>
+                </label>
               </div>
 
               <div>
@@ -307,6 +447,29 @@ export default function AdminProductsPage() {
                   rows={2}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Enter main product overview..."
+                  className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-stone-700 block mb-1">Ingredients &amp; Formulation</label>
+                <textarea
+                  rows={2}
+                  value={ingredients}
+                  onChange={(e) => setIngredients(e.target.value)}
+                  placeholder="e.g. Formulated with organic Ghanaian Baobab Oil, Vitamin C 15%, Niacinamide, and Rosehip Extract..."
+                  className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-stone-700 block mb-1">How To Use (Application Guide)</label>
+                <textarea
+                  rows={2}
+                  value={usage}
+                  onChange={(e) => setUsage(e.target.value)}
+                  placeholder="e.g. Apply 3-4 drops to cleansed face and neck morning and night..."
                   className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2"
                 />
               </div>

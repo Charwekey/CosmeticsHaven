@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Product, CartItem, User, Order, Coupon, Role } from '@/lib/types';
-import { INITIAL_USERS } from '@/lib/db/mock-db';
+import { ADMIN_ACCOUNTS, verifyAdminCredentials, mockDb } from '@/lib/db/mock-db';
 
 interface Toast {
   id: string;
@@ -34,10 +34,11 @@ interface ShopContextType {
   toggleWishlist: (product: Product) => void;
   isInWishlist: (productId: string) => boolean;
 
-  // Auth & Admin Switcher
+  // Auth
   currentUser: User | null;
   userRole: Role;
-  login: (email: string) => boolean;
+  login: (email: string, password: string) => boolean;
+  register: (name: string, email: string, phone: string, password: string) => void;
   logout: () => void;
   switchRole: (role: Role) => void;
 
@@ -57,7 +58,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [wishlist, setWishlist] = useState<Product[]>([]);
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const [selectedCity, setSelectedCity] = useState<string>('Accra');
-  const [currentUser, setCurrentUser] = useState<User | null>(INITIAL_USERS[1]); // Default demo customer
+  const [currentUser, setCurrentUser] = useState<User | null>(null); // Start as guest
   const [userRole, setUserRole] = useState<Role>('CUSTOMER');
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [searchOpen, setSearchOpen] = useState<boolean>(false);
@@ -232,26 +233,58 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     showToast('Coupon removed', 'info');
   };
 
-  const login = (email: string) => {
-    const user = INITIAL_USERS.find((u) => u.email.toLowerCase() === email.toLowerCase());
-    if (user) {
-      setCurrentUser(user);
-      setUserRole(user.role);
-      showToast(`Welcome back, ${user.name}!`, 'success');
+  const login = (email: string, password: string) => {
+    // 1. Check admin accounts (with flexible password matching and whitespace trimming)
+    const admin = verifyAdminCredentials(email, password);
+    if (admin) {
+      const { password: _pw, ...adminUser } = admin;
+      setCurrentUser(adminUser);
+      setUserRole('ADMIN');
       return true;
     }
-    // Create new customer mock
-    const newUser: User = {
+
+    // 2. Check registered customer accounts stored in localStorage
+    try {
+      const cleanEmail = email.trim().toLowerCase();
+      const cleanPw = password.trim();
+      const stored = localStorage.getItem('ch_registered_users');
+      if (stored) {
+        const registeredUsers: Array<User & { password: string }> = JSON.parse(stored);
+        const found = registeredUsers.find(
+          (u) => u.email.trim().toLowerCase() === cleanEmail && u.password.trim() === cleanPw,
+        );
+        if (found) {
+          const { password: _pw, ...customerUser } = found;
+          setCurrentUser(customerUser);
+          setUserRole('CUSTOMER');
+          return true;
+        }
+      }
+    } catch (e) {}
+    return false;
+  };
+
+  const register = (name: string, email: string, phone: string, password: string) => {
+    const newUser: User & { password: string } = {
       id: `usr-${Date.now()}`,
-      name: email.split('@')[0],
+      name,
       email,
+      phone,
       role: 'CUSTOMER',
       createdAt: new Date().toISOString(),
+      password,
     };
-    setCurrentUser(newUser);
+    // Persist in localStorage
+    try {
+      const stored = localStorage.getItem('ch_registered_users');
+      const existing: Array<User & { password: string }> = stored ? JSON.parse(stored) : [];
+      localStorage.setItem('ch_registered_users', JSON.stringify([...existing, newUser]));
+    } catch (e) {}
+    // Also add to in-memory mockDb so admin can see the customer
+    const { password: _pw, ...userRecord } = newUser;
+    mockDb.addCustomer(userRecord);
+    setCurrentUser(userRecord);
     setUserRole('CUSTOMER');
-    showToast('Account created successfully!', 'success');
-    return true;
   };
 
   const logout = () => {
@@ -261,14 +294,9 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const switchRole = (role: Role) => {
+    // Role switching is now handled through the real auth flow.
+    // This function is kept for backward compatibility only.
     setUserRole(role);
-    if (role === 'ADMIN') {
-      setCurrentUser(INITIAL_USERS[0]); // Admin user
-      showToast('Switched to Admin Mode', 'info');
-    } else {
-      setCurrentUser(INITIAL_USERS[1]); // Customer user
-      showToast('Switched to Customer Mode', 'info');
-    }
   };
 
   const cartCount = cart.reduce((count, item) => count + item.quantity, 0);
@@ -297,6 +325,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         currentUser,
         userRole,
         login,
+        register,
         logout,
         switchRole,
         toasts,

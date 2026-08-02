@@ -2,10 +2,14 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useShop } from '@/context/ShopContext';
-import { MapPin, Phone, Mail, Send, ShieldCheck, CreditCard, Sparkles, Share2, Globe, MessageCircle } from 'lucide-react';
+import { MapPin, Phone, Mail, Send, CreditCard, Sparkles, Share2, Globe, MessageCircle } from 'lucide-react';
 
 export const Footer: React.FC = () => {
+  const pathname = usePathname();
+  if (pathname?.startsWith('/admin')) return null;
+
   const { showToast } = useShop();
   const [email, setEmail] = useState('');
 
@@ -79,7 +83,6 @@ export const Footer: React.FC = () => {
               <li><Link href="/account" className="hover:text-amber-300 transition">Order Tracking</Link></li>
               <li><Link href="/contact" className="hover:text-amber-300 transition">Store Locator & Maps</Link></li>
               <li><Link href="/about" className="hover:text-amber-300 transition">Our Ghana Story</Link></li>
-              <li><Link href="/admin" className="hover:text-amber-300 transition flex items-center gap-1"><ShieldCheck className="w-3.5 h-3.5 text-amber-400" /> Admin Portal</Link></li>
               <li><span className="text-stone-500">Shipping Policy (Accra Same-Day)</span></li>
               <li><span className="text-stone-500">Returns & Exchanges</span></li>
             </ul>
