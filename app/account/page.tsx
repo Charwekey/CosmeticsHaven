@@ -22,11 +22,16 @@ import Link from 'next/link';
 export default function AccountPage() {
   const { currentUser, wishlist, toggleWishlist, addToCart, showToast } = useShop();
 
+  const [mounted, setMounted] = useState(false);
+  const [userOrders, setUserOrders] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<'orders' | 'wishlist' | 'addresses' | 'profile'>('orders');
   const [trackingInput, setTrackingInput] = useState('');
   const [trackedOrder, setTrackedOrder] = useState<any | null>(null);
 
-  const userOrders = mockDb.getOrders();
+  React.useEffect(() => {
+    setMounted(true);
+    setUserOrders(mockDb.getOrders());
+  }, []);
 
   const handleTrack = (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,7 +84,7 @@ export default function AccountPage() {
                 : 'text-stone-600 hover:text-stone-900'
             }`}
           >
-            <Package className="w-4 h-4" /> My Orders ({userOrders.length})
+            <Package className="w-4 h-4" /> My Orders ({mounted ? userOrders.length : 0})
           </button>
           <button
             onClick={() => setActiveTab('wishlist')}
@@ -89,7 +94,7 @@ export default function AccountPage() {
                 : 'text-stone-600 hover:text-stone-900'
             }`}
           >
-            <Heart className="w-4 h-4" /> Wishlist ({wishlist.length})
+            <Heart className="w-4 h-4" /> Wishlist ({mounted ? wishlist.length : 0})
           </button>
           <button
             onClick={() => setActiveTab('addresses')}
@@ -178,7 +183,7 @@ export default function AccountPage() {
                 </div>
 
                 <div className="space-y-2">
-                  {ord.orderItems.map((item) => (
+                  {ord.orderItems.map((item: any) => (
                     <div key={item.id} className="flex items-center justify-between text-xs">
                       <div className="flex items-center gap-3">
                         <img

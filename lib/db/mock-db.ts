@@ -1,4 +1,4 @@
-import { Product, Category, Order, User, Review, Coupon, ContactMessage, DashboardStats, StaffMember, DEFAULT_PRIVILEGES } from '../types';
+import { Product, Category, Order, User, Review, Coupon, ContactMessage, DashboardStats, StaffMember, DEFAULT_PRIVILEGES, CmsSettings } from '../types';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ADMIN ACCOUNTS
@@ -147,6 +147,12 @@ function saveToStorage<T>(key: string, data: T): void {
   } catch (e) {}
 }
 
+export const INITIAL_CMS: CmsSettings = {
+  bannerText: 'Free Accra Same-Day Delivery on orders over GH₵ 500 | Code: HAVEN10',
+  heroTitle: 'Unveil Your Radiant Haven',
+  heroSubtitle: "We are Accra's luxury beauty destination — formulated specifically for melanin-rich complexions, deeply rooted in Ghanaian botanical heritage.",
+};
+
 // Memory stores initialized with storage fallback
 let productsStore:   Product[]        = loadFromStorage('ch_db_products', INITIAL_PRODUCTS);
 let categoriesStore: Category[]       = loadFromStorage('ch_db_categories', INITIAL_CATEGORIES);
@@ -156,18 +162,38 @@ let reviewsStore:    Review[]         = loadFromStorage('ch_db_reviews', INITIAL
 let couponsStore:    Coupon[]         = loadFromStorage('ch_db_coupons', INITIAL_COUPONS);
 let messagesStore:   ContactMessage[] = loadFromStorage('ch_db_messages', INITIAL_MESSAGES);
 let staffStore:      StaffMember[]    = loadFromStorage('ch_db_staff', []);
+let cmsStore:        CmsSettings      = loadFromStorage('ch_db_cms', INITIAL_CMS);
 
 // Helper to ensure stores are synced if called on client side
 function syncStores() {
   if (typeof window !== 'undefined') {
-    productsStore   = loadFromStorage('ch_db_products', productsStore);
-    categoriesStore = loadFromStorage('ch_db_categories', categoriesStore);
-    ordersStore     = loadFromStorage('ch_db_orders', ordersStore);
-    usersStore      = loadFromStorage('ch_db_users', usersStore);
-    reviewsStore    = loadFromStorage('ch_db_reviews', reviewsStore);
-    couponsStore    = loadFromStorage('ch_db_coupons', couponsStore);
-    messagesStore   = loadFromStorage('ch_db_messages', messagesStore);
-    staffStore      = loadFromStorage('ch_db_staff', staffStore);
+    // Auto-wipe test orders & customer profiles once if not cleared yet (keeps products intact)
+    if (!localStorage.getItem('ch_data_cleared_v3')) {
+      ordersStore   = [];
+      usersStore    = [...INITIAL_USERS];
+      reviewsStore  = [];
+      messagesStore = [];
+      couponsStore  = [...INITIAL_COUPONS];
+      saveToStorage('ch_db_orders', []);
+      saveToStorage('ch_db_users', INITIAL_USERS);
+      saveToStorage('ch_db_reviews', []);
+      saveToStorage('ch_db_messages', []);
+      saveToStorage('ch_db_coupons', INITIAL_COUPONS);
+      try {
+        localStorage.removeItem('ch_registered_users');
+      } catch (e) {}
+      localStorage.setItem('ch_data_cleared_v3', 'true');
+    } else {
+      productsStore   = loadFromStorage('ch_db_products', productsStore);
+      categoriesStore = loadFromStorage('ch_db_categories', categoriesStore);
+      ordersStore     = loadFromStorage('ch_db_orders', ordersStore);
+      usersStore      = loadFromStorage('ch_db_users', usersStore);
+      reviewsStore    = loadFromStorage('ch_db_reviews', reviewsStore);
+      couponsStore    = loadFromStorage('ch_db_coupons', couponsStore);
+      messagesStore   = loadFromStorage('ch_db_messages', messagesStore);
+      staffStore      = loadFromStorage('ch_db_staff', staffStore);
+      cmsStore        = loadFromStorage('ch_db_cms', INITIAL_CMS);
+    }
   }
 }
 
@@ -304,6 +330,19 @@ export const mockDb = {
     };
     ordersStore.unshift(newOrder);
     saveToStorage('ch_db_orders', ordersStore);
+
+    // Subtract purchased quantity from product stock count
+    if (newOrder.orderItems && newOrder.orderItems.length > 0) {
+      newOrder.orderItems.forEach((item) => {
+        const prodIndex = productsStore.findIndex((p) => p.id === item.productId);
+        if (prodIndex !== -1) {
+          const currentStock = productsStore[prodIndex].stock ?? 0;
+          productsStore[prodIndex].stock = Math.max(0, currentStock - item.quantity);
+        }
+      });
+      saveToStorage('ch_db_products', productsStore);
+    }
+
     return newOrder;
   },
   updateOrderStatus: (id: string, status: Order['status']) => {
@@ -533,5 +572,35 @@ export const mockDb = {
     return staffStore.find(
       (s) => s.email.toLowerCase() === email.toLowerCase() && s.password === password && s.active,
     ) ?? null;
+  },
+
+  getCmsSettings: (): CmsSettings => {
+    syncStores();
+    return cmsStore;
+  },
+
+  updateCmsSettings: (updates: Partial<CmsSettings>): CmsSettings => {
+    syncStores();
+    cmsStore = { ...cmsStore, ...updates };
+    saveToStorage('ch_db_cms', cmsStore);
+    return cmsStore;
+  },
+
+  clearAllTestDataExceptProducts: () => {
+    ordersStore   = [];
+    usersStore    = [...INITIAL_USERS];
+    reviewsStore  = [];
+    messagesStore = [];
+    couponsStore  = [...INITIAL_COUPONS];
+    saveToStorage('ch_db_orders', []);
+    saveToStorage('ch_db_users', INITIAL_USERS);
+    saveToStorage('ch_db_reviews', []);
+    saveToStorage('ch_db_messages', []);
+    saveToStorage('ch_db_coupons', INITIAL_COUPONS);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem('ch_registered_users');
+      } catch (e) {}
+    }
   },
 };

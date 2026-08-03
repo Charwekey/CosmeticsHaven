@@ -1,30 +1,39 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useShop } from '@/context/ShopContext';
-import { Globe, Save } from 'lucide-react';
+import { mockDb } from '@/lib/db/mock-db';
+import { Save } from 'lucide-react';
 
 export default function AdminCmsPage() {
   const { showToast } = useShop();
 
-  const [bannerText, setBannerText] = useState(
-    'Free Accra Same-Day Delivery on orders over GH₵ 500 | Code: HAVEN10'
-  );
-  const [heroTitle, setHeroTitle] = useState('Unveil Your Radiant Haven');
-  const [heroSubtitle, setHeroSubtitle] = useState(
-    'Formulated specifically for melanin-rich complexions. Sourced with pure Ghanaian Baobab, Grade-A Northern Shea, and haute-couture perfumes.'
-  );
+  const [bannerText, setBannerText] = useState('');
+  const [heroTitle, setHeroTitle]   = useState('');
+  const [heroSubtitle, setHeroSubtitle] = useState('');
+
+  useEffect(() => {
+    const cms = mockDb.getCmsSettings();
+    setBannerText(cms.bannerText);
+    setHeroTitle(cms.heroTitle);
+    setHeroSubtitle(cms.heroSubtitle);
+  }, []);
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    showToast('CMS content updated live!', 'success');
+    mockDb.updateCmsSettings({
+      bannerText,
+      heroTitle,
+      heroSubtitle,
+    });
+    showToast('Website CMS updated live! Homepage refreshed.', 'success');
   };
 
   return (
     <div className="space-y-6">
       <div>
         <h2 className="font-serif-luxury text-3xl font-bold text-stone-900">Website CMS Management</h2>
-        <p className="text-stone-600 text-xs">Update top announcement bar, homepage tagline, and banners.</p>
+        <p className="text-stone-600 text-xs">Update top announcement bar, homepage title, tagline, and banners.</p>
       </div>
 
       <form onSubmit={handleSave} className="glass-panel rounded-3xl p-6 border border-white/90 shadow-md space-y-6">
@@ -35,7 +44,8 @@ export default function AdminCmsPage() {
             required
             value={bannerText}
             onChange={(e) => setBannerText(e.target.value)}
-            className="w-full bg-white border border-stone-200 rounded-xl px-3.5 py-2 text-xs text-stone-800"
+            className="w-full bg-white border border-stone-200 rounded-xl px-3.5 py-2 text-xs text-stone-800 focus:outline-none"
+            placeholder="Announcement bar text..."
           />
         </div>
 
@@ -46,7 +56,8 @@ export default function AdminCmsPage() {
             required
             value={heroTitle}
             onChange={(e) => setHeroTitle(e.target.value)}
-            className="w-full bg-white border border-stone-200 rounded-xl px-3.5 py-2 text-xs text-stone-800 font-serif-luxury text-lg"
+            className="w-full bg-white border border-stone-200 rounded-xl px-3.5 py-2 text-sm text-stone-800 font-serif-luxury font-bold focus:outline-none"
+            placeholder="Main hero title..."
           />
         </div>
 
@@ -57,11 +68,12 @@ export default function AdminCmsPage() {
             rows={3}
             value={heroSubtitle}
             onChange={(e) => setHeroSubtitle(e.target.value)}
-            className="w-full bg-white border border-stone-200 rounded-xl px-3.5 py-2 text-xs text-stone-800"
+            className="w-full bg-white border border-stone-200 rounded-xl px-3.5 py-2 text-xs text-stone-800 focus:outline-none"
+            placeholder="Main hero subtitle text..."
           />
         </div>
 
-        <button type="submit" className="gold-gradient-btn px-6 py-3 rounded-xl text-xs font-bold flex items-center gap-2">
+        <button type="submit" className="gold-gradient-btn px-6 py-3 rounded-xl text-xs font-bold flex items-center gap-2 shadow-md hover:scale-102 transition">
           <Save className="w-4 h-4 text-stone-950" /> Save CMS Changes
         </button>
       </form>

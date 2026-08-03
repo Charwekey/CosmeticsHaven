@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useShop } from '@/context/ShopContext';
 import { mockDb } from '@/lib/db/mock-db';
+import { Product, Review, Category } from '@/lib/types';
 import { formatCurrency } from '@/lib/utils';
 import {
   ArrowRight,
@@ -29,12 +30,27 @@ const CATEGORY_ICONS: Record<string, React.ReactNode> = {
 
 export default function HomePage() {
   const { addToCart, toggleWishlist, isInWishlist } = useShop();
-  const categories = mockDb.getCategories();
-  const featuredProducts = mockDb.getProducts().filter((p) => p.featured);
-  const bestSellers = mockDb.getProducts().filter((p) => p.isBestSeller);
-  const reviews = mockDb.getReviews().filter((r) => r.status === 'APPROVED');
 
+  const [mounted, setMounted] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [activeTab, setActiveTab] = useState<'featured' | 'bestsellers'>('featured');
+  const [cmsTitle, setCmsTitle] = useState('Unveil Your Radiant Haven');
+  const [cmsSubtitle, setCmsSubtitle] = useState("We are Accra's luxury beauty destination — formulated specifically for melanin-rich complexions, deeply rooted in Ghanaian botanical heritage.");
+
+  useEffect(() => {
+    setMounted(true);
+    setCategories(mockDb.getCategories());
+    setProducts(mockDb.getProducts());
+    setReviews(mockDb.getReviews().filter((r) => r.status === 'APPROVED'));
+    const cms = mockDb.getCmsSettings();
+    if (cms.heroTitle) setCmsTitle(cms.heroTitle);
+    if (cms.heroSubtitle) setCmsSubtitle(cms.heroSubtitle);
+  }, []);
+
+  const featuredProducts = products.filter((p) => p.featured);
+  const bestSellers = products.filter((p) => p.isBestSeller);
   const displayProducts = activeTab === 'featured' ? featuredProducts : bestSellers;
 
   return (
@@ -52,16 +68,14 @@ export default function HomePage() {
               <p className="eyebrow">We craft with purpose</p>
 
               <h1
-                className="font-serif-luxury text-5xl sm:text-6xl lg:text-[4.25rem] font-bold leading-[1.06] tracking-tight"
+                className="font-serif-luxury text-4xl sm:text-5xl lg:text-[3.75rem] font-bold leading-[1.08] tracking-tight whitespace-pre-line"
                 style={{ color: 'var(--midnight-orchid)' }}
               >
-                Unveil Your<br />
-                <span className="heading-gradient">Radiant</span> Haven
+                {cmsTitle}
               </h1>
 
-              <p className="text-base leading-relaxed max-w-[26rem]" style={{ color: 'var(--text-secondary)' }}>
-                We are Accra's luxury beauty destination — formulated specifically
-                for melanin-rich complexions, deeply rooted in Ghanaian botanical heritage.
+              <p className="text-base leading-relaxed max-w-[28rem]" style={{ color: 'var(--text-secondary)' }}>
+                {cmsSubtitle}
               </p>
 
               <div className="flex flex-wrap items-center gap-3 pt-1">
@@ -273,6 +287,13 @@ export default function HomePage() {
                 <div className="absolute top-2.5 left-2.5 flex flex-col gap-1">
                   {product.discountPrice && <span className="badge badge-dark">Sale</span>}
                   {product.isBestSeller && <span className="badge badge-orchid">Top Seller</span>}
+                  {product.stock <= 0 ? (
+                    <span className="badge" style={{ background: '#ef4444', color: '#fff' }}>Out of Stock</span>
+                  ) : (
+                    <span className="badge" style={{ background: 'rgba(255,255,255,0.92)', color: 'var(--midnight-orchid)', fontWeight: 600 }}>
+                      {product.stock} units in stock
+                    </span>
+                  )}
                 </div>
 
                 {/* Wishlist top-right */}

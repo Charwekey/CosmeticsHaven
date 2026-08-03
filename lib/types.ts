@@ -170,3 +170,9 @@ export interface RevenueDataPoint {
   revenue: number;
   orders: number;
 }
+
+export interface CmsSettings {
+  bannerText: string;
+  heroTitle: string;
+  heroSubtitle: string;
+}

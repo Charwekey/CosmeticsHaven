@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useShop } from '@/context/ShopContext';
+import { mockDb } from '@/lib/db/mock-db';
 import {
   Search,
   ShoppingBag,
@@ -24,18 +25,31 @@ export const Navbar: React.FC = () => {
   const pathname = usePathname();
   if (pathname?.startsWith('/admin')) return null;
 
-  const { cartCount, wishlist, setSearchOpen, currentUser, userRole, logout, subtotal } = useShop();
+  const {
+    cartCount,
+    wishlist,
+    setSearchOpen,
+    currentUser,
+    userRole,
+    logout,
+    subtotal,
+    authModalOpen,
+    setAuthModalOpen,
+    authTab,
+    openSignIn,
+    openSignUp,
+  } = useShop();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
-  const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [authTab, setAuthTab] = useState<'signin' | 'signup'>('signin');
+  const [bannerText, setBannerText] = useState('Free Accra Same-Day Delivery on orders over GH₵ 500 | Code: HAVEN10');
+
+  React.useEffect(() => {
+    setBannerText(mockDb.getCmsSettings().bannerText);
+  }, []);
 
   const isAdminPath = pathname?.startsWith('/admin');
   const isLoggedIn = !!currentUser;
-
-  const openSignIn = () => { setAuthTab('signin'); setAuthModalOpen(true); setMobileMenuOpen(false); };
-  const openSignUp = () => { setAuthTab('signup'); setAuthModalOpen(true); setMobileMenuOpen(false); };
 
   const navLinks = [
     { href: '/', label: 'Home' },
@@ -59,7 +73,7 @@ export const Navbar: React.FC = () => {
           </div>
           <div className="flex items-center gap-1.5">
             <Sparkles className="w-3 h-3 animate-pulse" style={{ color: 'var(--iris-mist)' }} />
-            <span>Free Same-Day Delivery on orders over GH₵ 500 · Code: <strong className="text-white">HAVEN10</strong></span>
+            <span>{bannerText}</span>
           </div>
           <div className="flex items-center gap-4">
             <Link href="/contact" className="hover:text-white transition" style={{ color: 'var(--plum-blossom)' }}>Store Locator</Link>

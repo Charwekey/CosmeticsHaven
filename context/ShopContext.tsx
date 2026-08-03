@@ -41,6 +41,12 @@ interface ShopContextType {
   register: (name: string, email: string, phone: string, password: string) => void;
   logout: () => void;
   switchRole: (role: Role) => void;
+  authModalOpen: boolean;
+  setAuthModalOpen: (open: boolean) => void;
+  authTab: 'signin' | 'signup';
+  setAuthTab: (tab: 'signin' | 'signup') => void;
+  openSignIn: () => void;
+  openSignUp: () => void;
 
   // Toast System
   toasts: Toast[];
@@ -61,7 +67,9 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [currentUser, setCurrentUser] = useState<User | null>(null); // Start as guest
   const [userRole, setUserRole] = useState<Role>('CUSTOMER');
   const [toasts, setToasts] = useState<Toast[]>([]);
-  const [searchOpen, setSearchOpen] = useState<boolean>(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authTab, setAuthTab] = useState<'signin' | 'signup'>('signin');
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -106,7 +114,26 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, 3500);
   };
 
+  const openSignIn = () => { setAuthTab('signin'); setAuthModalOpen(true); };
+  const openSignUp = () => { setAuthTab('signup'); setAuthModalOpen(true); };
+
   const addToCart = (product: Product, quantity: number = 1) => {
+    if (!currentUser) {
+      showToast('Kindly log in to add items to your cart 👑', 'info');
+      openSignIn();
+      return;
+    }
+    if (product.stock <= 0) {
+      showToast(`Sorry, ${product.name} is currently out of stock.`, 'error');
+      return;
+    }
+    const existingItem = cart.find((item) => item.product.id === product.id);
+    const currentInCart = existingItem ? existingItem.quantity : 0;
+    if (currentInCart + quantity > product.stock) {
+      showToast(`Sorry, only ${product.stock} units available in stock.`, 'error');
+      return;
+    }
+
     setCart((prevCart) => {
       const existing = prevCart.find((item) => item.product.id === product.id);
       if (existing) {
@@ -144,6 +171,11 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const toggleWishlist = (product: Product) => {
+    if (!currentUser) {
+      showToast('Kindly log in to save items to your wishlist 👑', 'info');
+      openSignIn();
+      return;
+    }
     setWishlist((prev) => {
       const exists = prev.some((p) => p.id === product.id);
       if (exists) {
@@ -328,6 +360,12 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         register,
         logout,
         switchRole,
+        authModalOpen,
+        setAuthModalOpen,
+        authTab,
+        setAuthTab,
+        openSignIn,
+        openSignUp,
         toasts,
         showToast,
         searchOpen,

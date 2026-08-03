@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState, useMemo, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useShop } from '@/context/ShopContext';
 import { mockDb } from '@/lib/db/mock-db';
+import { Product, Category } from '@/lib/types';
 import { formatCurrency } from '@/lib/utils';
 import { Search, Heart, ShoppingBag, Star, X } from 'lucide-react';
 import Link from 'next/link';
@@ -19,9 +20,13 @@ function ShopContent() {
   const [searchQuery, setSearchQuery] = useState<string>(initialSearch);
   const [sortBy, setSortBy] = useState<string>('featured');
   const [priceLimit, setPriceLimit] = useState<number>(1000);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
 
-  const categories = mockDb.getCategories();
-  const allProducts = mockDb.getProducts();
+  useEffect(() => {
+    setCategories(mockDb.getCategories());
+    setAllProducts(mockDb.getProducts());
+  }, []);
 
   const filteredProducts = useMemo(() => {
     return allProducts.filter((p) => {
@@ -174,6 +179,15 @@ function ShopContent() {
                   {product.discountPrice && (
                     <span className="glass-pill px-2.5 py-1 rounded-full text-[10px] font-bold text-amber-900">
                       SALE
+                    </span>
+                  )}
+                  {product.stock <= 0 ? (
+                    <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-600 text-white">
+                      OUT OF STOCK
+                    </span>
+                  ) : (
+                    <span className="glass-pill px-2.5 py-1 rounded-full text-[10px] font-bold text-stone-800 bg-white/90">
+                      {product.stock} units in stock
                     </span>
                   )}
                 </div>
